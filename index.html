@@ -243,21 +243,21 @@
                 const m = GAME.time / 60; const timeMult = 1 + (m * m * 0.3); 
                 this.speed = 2.2; this.dmg = 10 + Math.floor(m); this.radius = 15; this.resist = 1.0; 
                 
-                if (this.type === 'boss_minsang') { this.icon="🤡"; this.hp=5000; this.speed=2.0; this.dmg=25; this.radius=40; this.resist=0.1; }
-                else if (this.type === 'boss_taeho') { this.icon="👿"; this.hp=15000; this.speed=2.2; this.dmg=40; this.radius=45; this.resist=0.05; }
-                else if (this.type === 'boss_hanki') { this.icon="👺"; this.hp=30000; this.speed=2.4; this.dmg=60; this.radius=50; this.resist=0.0; }
+                if (this.type === 'boss_minsang') { this.icon="🤡"; this.hp=7000; this.speed=2.3; this.dmg=28; this.radius=40; this.resist=0.0; }
+                else if (this.type === 'boss_taeho') { this.icon="👿"; this.hp=20000; this.speed=2.5; this.dmg=45; this.radius=45; this.resist=0.0; }
+                else if (this.type === 'boss_hanki') { this.icon="👺"; this.hp=40000; this.speed=2.6; this.dmg=65; this.radius=50; this.resist=0.0; }
                 else if (this.type === 'fast' || this.type === 'swarm') { this.icon="🍜"; this.speed=3.6; this.hp=10*(1+m); this.resist=0.8; } 
-                else if (this.type === 'tank') { this.icon="🛡️"; this.speed=1.6; this.hp=90*timeMult; this.dmg=15+m; this.resist=0.2; } 
-                else if (this.type === 'boss') { this.icon="🦍"; this.speed=2.8; this.hp=3000*(1+m*0.4); this.radius=40; this.dmg=30; this.resist=0.05; } 
-                else if (this.type === 'boss_final') { this.icon="🧙"; this.speed=3.6; this.hp=45000; this.radius=50; this.dmg=80; this.resist=0.0; } 
+                else if (this.type === 'tank') { this.icon="🛡️"; this.speed=1.6; this.hp=90*timeMult; this.dmg=15+m; this.resist=0.15; } 
+                else if (this.type === 'boss') { this.icon="🦍"; this.speed=3.0; this.hp=4000*(1+m*0.4); this.radius=40; this.dmg=35; this.resist=0.0; }
+                else if (this.type === 'boss_final') { this.icon="🧙"; this.speed=3.8; this.hp=60000; this.radius=50; this.dmg=90; this.resist=0.0; } 
                 else { this.icon="🧟"; this.hp=22*timeMult; this.speed=2.2+(m*0.1); }
                 this.maxHp = this.hp;
             }
             update() {
                 if (this.hitFlash > 0) this.hitFlash--;
                 if (GAME.freezeTimer > 0) return;
-                if (Math.abs(this.pushX)>0.1 || Math.abs(this.pushY)>0.1) { this.x+=this.pushX*this.resist; this.y+=this.pushY*this.resist; this.pushX*=0.85; this.pushY*=0.85; } 
-                else { const a = Math.atan2(player.y-this.y, player.x-this.x); this.x+=Math.cos(a)*this.speed; this.y+=Math.sin(a)*this.speed; }
+                if (this.resist > 0 && (Math.abs(this.pushX)>0.1 || Math.abs(this.pushY)>0.1)) { this.x+=this.pushX*this.resist; this.y+=this.pushY*this.resist; this.pushX*=0.85; this.pushY*=0.85; }
+                else { this.pushX=0; this.pushY=0; const a = Math.atan2(player.y-this.y, player.x-this.x); this.x+=Math.cos(a)*this.speed; this.y+=Math.sin(a)*this.speed; }
                 const dist = Math.hypot(player.x-this.x, player.y-this.y);
                 if (dist < 20 + this.radius) { if (player.invincible <= 0) { player.hp -= this.dmg; player.invincible = 30; GAME.screenShake = 5; if (player.hp <= 0) endGame(); } }
             }
@@ -353,17 +353,19 @@
                 player.auraRange = range; 
                 player.auraColor = isEvo ? 'rgba(168, 85, 247, 0.3)' : 'rgba(255, 255, 0, 0.2)'; 
 
+                let auraHeal = 0;
                 enemies.forEach(e => {
                     if (Math.hypot(e.x-player.x, e.y-player.y) < range + e.radius) {
                         const dmg = getWeaponDamage(isEvo?'analysis':'jacket', lv, isEvo);
-                        e.hp -= dmg; e.hitFlash = 5; 
-                        const pushForce = isEvo ? 15 : 5;
-                        const a = Math.atan2(e.y-player.y, e.x-player.x); 
+                        e.hp -= dmg; e.hitFlash = 5;
+                        const pushForce = isEvo ? 12 : 4;
+                        const a = Math.atan2(e.y-player.y, e.x-player.x);
                         e.pushX = Math.cos(a) * pushForce; e.pushY = Math.sin(a) * pushForce;
                         if(e.hp <= 0) killEnemy(e);
-                        if(isEvo && player.hp < player.maxHp) player.hp += 0.5;
+                        if(isEvo) auraHeal += 0.3;
                     }
                 });
+                if(isEvo && auraHeal > 0) player.hp = Math.min(player.maxHp, player.hp + Math.min(auraHeal, 3));
             },
             fireOrbital(inv) {
                 const isEvo = !!inv.burning; const count = isEvo ? 6 : 2 + inv.hand;
@@ -426,12 +428,14 @@
                         else if(it.type==='score') { GAME.score += 100; showFloatText(player.x, player.y, "+100 Score", 30, "yellow"); } 
                         else if(it.type==='magnet') { items.forEach(i => i.sucked = true); showFloatText(player.x, player.y, "🧲 Magnet!"); } 
                         else if(it.type==='freeze') { GAME.freezeTimer = it.val; showFloatText(player.x, player.y, "⏱️ Freeze!"); } 
-                        else if(it.type==='nuke') { 
-                            const flash = document.getElementById('flash-layer'); flash.style.opacity = 0.6; setTimeout(() => flash.style.opacity = 0, 500); 
+                        else if(it.type==='nuke') {
+                            const flash = document.getElementById('flash-layer'); flash.style.opacity = 0.6; setTimeout(() => flash.style.opacity = 0, 500);
                             GAME.screenShake = 20; spawnParticles(player.x, player.y, '#fde047', 50, 10, 10);
-                            [...enemies].forEach(e => { showFloatText(e.x, e.y, "☠️", 30, "red"); killEnemy(e); }); 
-                            enemies = []; 
-                            showFloatText(player.x, player.y, "🗣️ 트림 살포!", 40, "yellow"); 
+                            [...enemies].forEach(e => {
+                                if (e.type.includes('boss')) { e.hp -= e.maxHp * 0.3; e.hitFlash = 10; showFloatText(e.x, e.y, Math.floor(e.maxHp * 0.3), 30, "orange"); if (e.hp <= 0) killEnemy(e); }
+                                else { showFloatText(e.x, e.y, "☠️", 30, "red"); killEnemy(e); }
+                            });
+                            showFloatText(player.x, player.y, "🗣️ 트림 살포!", 40, "yellow");
                         }
                         items.splice(i, 1); updateUI();
                     }
