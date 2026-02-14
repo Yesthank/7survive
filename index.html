@@ -193,7 +193,7 @@
             reset() {
                 this.x = 0; this.y = 0;
                 this.hp = GAME_CONFIG.baseHp; this.maxHp = GAME_CONFIG.baseHp;
-                this.exp = 0; this.level = 1; this.nextExp = 10; 
+                this.exp = 0; this.level = 1; this.nextExp = 20; 
                 this.invincible = 0;
                 this.inventory = { weapons: { cane: 1 }, passives: {} };
                 this.stats = { cd: 1, area: 1, duration: 1, magnet: 1, might: 1, speed: 1, recovery: 0 };
@@ -352,7 +352,7 @@
                 if(isEvo && auraHeal > 0) player.hp = Math.min(player.maxHp, player.hp + Math.min(auraHeal, 3));
                 if(isEvo && GAME.frame % 90 === 0) {
                     const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * (range * 0.6);
-                    analysisTexts.push({ text: ANALYSIS_QUOTES[Math.floor(Math.random()*ANALYSIS_QUOTES.length)], x: player.x + Math.cos(a)*d, y: player.y + Math.sin(a)*d, life: 80 });
+                    analysisTexts.push({ text: ANALYSIS_QUOTES[Math.floor(Math.random()*ANALYSIS_QUOTES.length)], x: player.x + Math.cos(a)*d, y: player.y + Math.sin(a)*d, life: 140 });
                 }
             },
             fireOrbital(inv) {
@@ -466,7 +466,7 @@
 
         function levelUp() {
             if(player.exp < player.nextExp) return; 
-            player.level++; player.exp -= player.nextExp; player.nextExp = Math.floor(player.nextExp * 1.21);
+            player.level++; player.exp -= player.nextExp; player.nextExp = Math.floor(player.nextExp * 1.22);
             GAME.state = 'paused';
             const box = document.getElementById('cards-box'); box.innerHTML = '';
             const pool = [];
@@ -650,7 +650,7 @@
                 for(let i = analysisTexts.length - 1; i >= 0; i--) {
                     const t = analysisTexts[i];
                     t.y -= 0.4; t.life--;
-                    const alpha = Math.min(1, t.life / 30) * 0.7;
+                    const alpha = Math.min(1, t.life / 50) * 0.7;
                     ctx.globalAlpha = alpha;
                     ctx.fillStyle = '#e9d5ff'; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 3;
                     ctx.strokeText(t.text, t.x, t.y); ctx.fillText(t.text, t.x, t.y);
