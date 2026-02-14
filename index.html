@@ -154,7 +154,7 @@
 
         const DATABASE = {
             weapons: {
-                cane: { name: "영기의 분필", icon: "📏", type: "weapon", desc: "관통하는 분필 투척", evo: "bat", cd: 50, baseDmg: 20, perDmg: 4 },
+                cane: { name: "영기의 분필", icon: "📏", type: "weapon", desc: "관통하는 분필 투척", evo: "bat", cd: 50, baseDmg: 25, perDmg: 5 },
                 hand: { name: "김한기의 손", icon: "🖐️", type: "weapon", desc: "주변 회전", evo: "burning", baseDmg: 12, perDmg: 3 },
                 jacket: { name: "낡은 야상", icon: "💩", type: "weapon", desc: "오라 데미지 + 슈퍼넉백", evo: "analysis", baseDmg: 6, perDmg: 2 },
                 pizza: { name: "피자탕", icon: "🍕", type: "weapon", desc: "초광역 폭격", evo: "pig", cd: 60, baseDmg: 22, perDmg: 4 },
@@ -572,7 +572,7 @@
                             }
                         }
                     }
-                } else if (p.type === 'zone' && GAME.frame % 10 === 0) { 
+                } else if (p.type === 'zone' && GAME.frame % 20 === 0) {
                     enemies.forEach(e => {
                         const r = p.radius || 60;
                         if (Math.hypot(e.x - p.x, e.y - p.y) < r) {
@@ -637,15 +637,30 @@
             ctx.fillStyle = 'white'; ctx.globalAlpha = 1.0;
             enemies.forEach(e => {
                 ctx.save(); ctx.translate(e.x, e.y);
-                if(e.hitFlash > 0) { ctx.globalCompositeOperation = "source-over"; ctx.shadowColor = "white"; ctx.shadowBlur = 20; } 
+                if(e.hitFlash > 0) { ctx.globalCompositeOperation = "source-over"; ctx.shadowColor = "white"; ctx.shadowBlur = 20; }
                 else { ctx.shadowColor = "rgba(255,255,255,0.3)"; ctx.shadowBlur = 5; }
                 if (e.x > player.x) ctx.scale(-1, 1);
                 let fontSize = '26px';
-                if(e.type.includes('boss')) fontSize = '50px';
-                ctx.font = fontSize + ' Arial'; 
+                const isBoss = e.type.includes('boss');
+                if(isBoss) fontSize = '50px';
+                ctx.font = fontSize + ' Arial';
                 ctx.fillText(e.icon, 0, 0);
                 if(e.hitFlash > 0) { ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillText(e.icon, 0, 0); }
                 ctx.restore();
+                // 보스 이름 + HP바
+                if(isBoss) {
+                    const name = ENEMY_NAMES[e.type] || e.type;
+                    const hpRatio = Math.max(0, e.hp / e.maxHp);
+                    ctx.save();
+                    ctx.font = 'bold 13px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+                    ctx.fillStyle = '#000'; ctx.fillText(name, e.x, e.y + 30);
+                    ctx.fillStyle = '#fbbf24'; ctx.fillText(name, e.x - 1, e.y + 29);
+                    // HP바
+                    const bw = 60, bh = 5, bx = e.x - bw/2, by = e.y + 46;
+                    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(bx-1, by-1, bw+2, bh+2);
+                    ctx.fillStyle = hpRatio > 0.3 ? '#ef4444' : '#fbbf24'; ctx.fillRect(bx, by, bw * hpRatio, bh);
+                    ctx.restore();
+                }
             });
 
             drawPlayer();
