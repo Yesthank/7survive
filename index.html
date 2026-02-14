@@ -402,7 +402,7 @@
             else if (rand < 0.015) { drop = { type:'magnet', icon:'🧲', val:0, x:e.x, y:e.y }; }
             else if (rand < 0.03) { drop = { type:'heal', icon:'🍗', val:50, x:e.x, y:e.y }; }
             else if (rand < 0.05) { drop = { type:'score', icon:'💰', val:100, x:e.x, y:e.y }; }
-            else { let xpVal = 12; let xpIcon = "🔹"; if(e.type === 'tank') { xpVal = 60; xpIcon = "💠"; } drop = { type:'exp', icon: xpIcon, val: xpVal, x:e.x, y:e.y }; }
+            else { const m = GAME.time/60; let xpVal = Math.floor(12 + m * 2); let xpIcon = "🔹"; if(e.type === 'tank') { xpVal = Math.floor(60 + m * 8); xpIcon = "💠"; } else if(e.type === 'fast' || e.type === 'swarm') { xpVal = Math.floor(8 + m * 1.5); } drop = { type:'exp', icon: xpIcon, val: xpVal, x:e.x, y:e.y }; }
             items.push(drop); document.getElementById('ui-kill').innerText = GAME.score;
         }
 
@@ -455,7 +455,7 @@
 
         function levelUp() {
             if(player.exp < player.nextExp) return; 
-            player.level++; player.exp -= player.nextExp; player.nextExp = Math.floor(player.nextExp * 1.25);
+            player.level++; player.exp -= player.nextExp; player.nextExp = Math.floor(player.nextExp * 1.18);
             GAME.state = 'paused';
             const box = document.getElementById('cards-box'); box.innerHTML = '';
             const pool = [];
