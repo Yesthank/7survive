@@ -431,12 +431,13 @@
 
         function updateItems() {
             for(let i=items.length-1; i>=0; i--) {
+                if (GAME.state !== 'running') break;
                 const it = items[i], d = Math.hypot(player.x-it.x, player.y-it.y);
                 const magnetRange = 80 * player.stats.magnet;
                 if (d < magnetRange || it.sucked) {
                     it.sucked = true; it.x += (player.x - it.x) * 0.15; it.y += (player.y - it.y) * 0.15;
                     if(d < 20) {
-                        if(it.type==='exp') { player.exp += it.val; if(player.exp >= player.nextExp) levelUp(); } 
+                        if(it.type==='exp') { player.exp += it.val; if(player.exp >= player.nextExp) levelUp(); }
                         else if(it.type==='chest') { openChest(); } 
                         else if(it.type==='heal') { player.hp = Math.min(player.maxHp, player.hp + it.val); showFloatText(player.x, player.y, "💚"); } 
                         else if(it.type==='score') { GAME.score += 100; showFloatText(player.x, player.y, "+100 Score", 30, "yellow"); } 
@@ -460,7 +461,7 @@
         function openChest() {
             GAME.state = 'paused';
             const r = Math.random(); const count = r < 0.02 ? 5 : (r < 0.2 ? 3 : 1);
-            const pool = []; for(let k in player.inventory.weapons) pool.push({id:k, type:'weapon'}); for(let k in player.inventory.passives) pool.push({id:k, type:'passive'});
+            const pool = []; for(let k in player.inventory.weapons) { if(!DATABASE.weapons[k].type.includes('evo')) pool.push({id:k, type:'weapon'}); } for(let k in player.inventory.passives) pool.push({id:k, type:'passive'});
             const rewards = [];
             for(let i=0; i<count; i++) {
                 if(pool.length === 0) break;
@@ -474,7 +475,7 @@
             rewards.forEach(r => { box.innerHTML += `<div class="chest-item"><div style="font-size:40px">${r.icon}</div><div style="color:white;margin-top:5px;">${r.name}</div><div style="color:#fbbf24;font-size:12px;">UPGRADE!</div></div>`; });
             document.getElementById('chest-modal').style.display = 'flex'; player.updateStats(); updateUI();
         }
-        function closeChest() { document.getElementById('chest-modal').style.display = 'none'; resumeGame(); }
+        function closeChest() { document.getElementById('chest-modal').style.display = 'none'; if(player.exp >= player.nextExp) levelUp(); else resumeGame(); }
 
         function levelUp() {
             if(player.exp < player.nextExp) return; 
