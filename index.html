@@ -110,6 +110,17 @@
     <canvas id="gameCanvas"></canvas>
 
     <script>
+        // ── 개발자 도구 / 소스보기 차단 ──
+        // 우클릭 메뉴 차단
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        // 키보드 단축키 차단 (F12, Ctrl+Shift+I/J/C, Ctrl+U)
+        document.addEventListener('keydown', e => {
+            if (e.key === 'F12') { e.preventDefault(); return; }
+            if (e.ctrlKey && e.shiftKey && ['I','i','J','j','C','c'].includes(e.key)) { e.preventDefault(); return; }
+            if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) { e.preventDefault(); return; }
+            if (e.ctrlKey && (e.key === 's' || e.key === 'S')) { e.preventDefault(); return; }
+        });
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         let WIDTH = window.innerWidth, HEIGHT = window.innerHeight;
