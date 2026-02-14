@@ -466,7 +466,7 @@
 
         function levelUp() {
             if(player.exp < player.nextExp) return; 
-            player.level++; player.exp -= player.nextExp; player.nextExp = Math.floor(player.nextExp * 1.18);
+            player.level++; player.exp -= player.nextExp; player.nextExp = Math.floor(player.nextExp * 1.21);
             GAME.state = 'paused';
             const box = document.getElementById('cards-box'); box.innerHTML = '';
             const pool = [];
