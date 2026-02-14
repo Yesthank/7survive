@@ -396,7 +396,18 @@
             enemies.splice(idx, 1); GAME.score++;
             const rand = Math.random();
             let drop = null;
-            if (e.type.includes('boss')) { drop = { type:'chest', icon:'🎁', val:999, x:e.x, y:e.y }; }
+            if (e.type.includes('boss')) {
+                drop = { type:'chest', icon:'🎁', val:999, x:e.x, y:e.y };
+                // 네임드 보스 추가 보상
+                if(e.type === 'boss_minsang' || e.type === 'boss_taeho' || e.type === 'boss_hanki') {
+                    const bonus = e.type === 'boss_hanki' ? 5 : e.type === 'boss_taeho' ? 4 : 3;
+                    for(let b=0; b<bonus; b++) {
+                        const ox = e.x + (Math.random()-0.5)*80, oy = e.y + (Math.random()-0.5)*80;
+                        items.push({ type:'exp', icon:'💠', val: Math.floor(80 + GAME.time/60 * 15), x:ox, y:oy });
+                    }
+                    items.push({ type:'heal', icon:'🍗', val:80, x: e.x + 30, y: e.y });
+                }
+            }
             else if (rand < 0.005) { drop = { type:'nuke', icon:'🗣️', val:0, x:e.x, y:e.y }; } 
             else if (rand < 0.01) { drop = { type:'freeze', icon:'⏱️', val:300, x:e.x, y:e.y }; }
             else if (rand < 0.015) { drop = { type:'magnet', icon:'🧲', val:0, x:e.x, y:e.y }; }
