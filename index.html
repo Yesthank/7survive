@@ -20,25 +20,7 @@
         #joystick-zone { pointer-events: auto; }
         #title-screen, #levelup-modal, #chest-modal, #result-screen { z-index: 200; }
 
-        /* 인벤토리 슬롯 스타일 개선 */
-        #inventory { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
-        .item-slot { 
-            width: 32px; height: 32px; 
-            border-radius: 4px; 
-            display: flex; justify-content: center; align-items: center; 
-            position: relative; font-size: 20px;
-            background: rgba(0,0,0,0.5);
-            border: 2px solid #555;
-        }
-        /* 무기는 빨강, 패시브는 파랑 강조 */
-        .item-slot.weapon { border-color: #f87171; background: rgba(248, 113, 113, 0.2); }
-        .item-slot.passive { border-color: #60a5fa; background: rgba(96, 165, 250, 0.2); }
-        
-        .item-lvl { 
-            position: absolute; bottom: 0; right: 2px; 
-            font-size: 10px; color: white; font-weight: bold; 
-            text-shadow: 1px 1px 0 #000;
-        }
+        /* 인벤토리/아이템 슬롯 — style.css에서 관리 */
 
         /* 레벨업 카드 스타일 */
         .card { position: relative; overflow: hidden; border-width: 2px; }
@@ -58,9 +40,7 @@
         .synergy-text { color: #f472b6; font-size: 12px; font-weight: bold; margin-bottom: 3px; animation: pulseText 1s infinite; }
         .lv-up-text { color: #fbbf24; font-size: 14px; font-weight: bold; margin-bottom: 2px; }
 
-        /* 가이드 텍스트 */
-        #evo-guide { position: absolute; top: 60px; right: 10px; text-align: right; color: rgba(255, 255, 255, 0.8); font-size: 11px; font-family: 'Noto Sans KR', sans-serif; background: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 8px; pointer-events: none; line-height: 1.8; border: 1px solid #444; }
-        #evo-guide b { color: #fbbf24; font-size: 14px; }
+        /* 가이드 텍스트 — style.css에서 관리 */
 
         /* 보물상자 */
         #chest-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; }
@@ -78,12 +58,11 @@
 
     <div id="title-screen">
         <div class="main-title">7반 서바이벌</div>
-        <div style="font-size:16px; color:#fbbf24; font-weight:bold; margin-bottom:20px;">🎒 INVENTORY & PACING UPDATE 🎒</div>
+        <div class="title-version">V16.2 BALANCE PATCH</div>
         <button class="menu-btn" onclick="startGame(true)">새로 하기</button>
         <button class="menu-btn secondary" onclick="loadGame()">이어 하기</button>
-        <div style="margin-top: 20px; color: #aaa; font-size: 14px; text-align: center;">
-            <p>※ 캐릭터 설정</p>
-            <p>폴더에 <b>character.png</b>가 있으면<br>그 캐릭터로 플레이합니다.</p>
+        <div class="title-info">
+            <p>※ 폴더에 <b>character.png</b>가 있으면<br>커스텀 캐릭터로 플레이</p>
         </div>
     </div>
 
@@ -371,20 +350,23 @@
             fireOrbital(inv) {
                 const isEvo = !!inv.burning; const count = isEvo ? 6 : 2 + inv.hand;
                 const r = 120 * player.stats.area; const spd = isEvo ? 0.08 : 0.04;
+                // 오비탈 위치를 캐시 (렌더에서 재사용)
+                this._orbitals = []; this._orbitalEvo = isEvo;
                 for(let i=0; i<count; i++) {
                     const a = (GAME.frame * spd) + (Math.PI * 2 / count) * i;
                     const hx = player.x + Math.cos(a) * r; const hy = player.y + Math.sin(a) * r;
-                    if(isEvo && GAME.frame%3===0) spawnParticles(hx, hy, 'orange', 1, 1, 3);
-                    projectiles.push({ type: 'visual', x: hx, y: hy, icon: isEvo?"👹":"🖐️", life: 2 });
+                    this._orbitals.push({x: hx, y: hy});
+                    if(isEvo && GAME.frame%15===0) spawnParticles(hx, hy, 'orange', 1, 1, 3);
                     if(GAME.frame % 5 === 0) {
-                        enemies.forEach(e => {
+                        for(let j=enemies.length-1; j>=0; j--) {
+                            const e = enemies[j];
                             if(Math.hypot(e.x - hx, e.y - hy) < 30) {
                                 const dmg = getWeaponDamage(isEvo?'burning':'hand', inv[isEvo?'burning':'hand'], isEvo);
                                 e.hp -= dmg; e.hitFlash = 5;
                                 const pa = Math.atan2(e.y - player.y, e.x - player.x); e.pushX = Math.cos(pa)*8; e.pushY = Math.sin(pa)*8;
                                 if(e.hp <= 0) killEnemy(e);
                             }
-                        });
+                        }
                     }
                 }
             },
@@ -521,20 +503,24 @@
             document.getElementById('ui-timer').innerText = `${m}:${s} (${prog}%)`;
             
             const inv = document.getElementById('inventory'); inv.innerHTML='';
-            
-            // [UPDATE] 무기 먼저, 그다음 아이템 정렬 및 색상 적용
-            for(let k in player.inventory.weapons) {
-                if(player.inventory.weapons[k] > 0) {
-                    const db = DATABASE.weapons[k];
-                    inv.innerHTML += `<div class="item-slot weapon">${db.icon}<span class="item-lvl">${player.inventory.weapons[k]}</span></div>`;
-                }
+            const wpns = player.inventory.weapons, psvs = player.inventory.passives;
+            const shown = new Set();
+            // 시너지 짝궁 그룹핑: 무기 + 페어 패시브를 한 그룹으로
+            for(let wk in DATABASE.evolution) {
+                const pk = DATABASE.evolution[wk];
+                const evoId = DATABASE.weapons[wk].evo;
+                const hasWeapon = wpns[wk] > 0, hasEvo = wpns[evoId] > 0, hasPassive = psvs[pk] > 0;
+                if(!hasWeapon && !hasEvo && !hasPassive) continue;
+                const ready = (hasWeapon || hasEvo) && hasPassive;
+                let g = `<div class="inv-group${ready?' synergy-ready':''}">`;
+                if(hasEvo) { shown.add(evoId); g += `<div class="item-slot evo">${DATABASE.weapons[evoId].icon}<span class="item-lvl">${wpns[evoId]}</span></div>`; }
+                else if(hasWeapon) { shown.add(wk); g += `<div class="item-slot weapon">${DATABASE.weapons[wk].icon}<span class="item-lvl">${wpns[wk]}</span></div>`; }
+                if(hasPassive) { shown.add(pk); g += `<div class="item-slot passive">${DATABASE.passives[pk].icon}<span class="item-lvl">${psvs[pk]}</span></div>`; }
+                g += '</div>'; inv.innerHTML += g;
             }
-            for(let k in player.inventory.passives) {
-                if(player.inventory.passives[k] > 0) {
-                    const db = DATABASE.passives[k];
-                    inv.innerHTML += `<div class="item-slot passive">${db.icon}<span class="item-lvl">${player.inventory.passives[k]}</span></div>`;
-                }
-            }
+            // 짝궁 없는 나머지
+            for(let k in wpns) { if(wpns[k] > 0 && !shown.has(k)) inv.innerHTML += `<div class="inv-group"><div class="item-slot weapon">${DATABASE.weapons[k].icon}<span class="item-lvl">${wpns[k]}</span></div></div>`; }
+            for(let k in psvs) { if(psvs[k] > 0 && !shown.has(k)) inv.innerHTML += `<div class="inv-group"><div class="item-slot passive">${DATABASE.passives[k].icon}<span class="item-lvl">${psvs[k]}</span></div></div>`; }
         }
 
         function showFloatText(x, y, t, size=20, color="white") { damageTexts.push({x, y, text:t, life:40, size, color}); }
@@ -663,6 +649,14 @@
             });
 
             drawPlayer();
+            // 오비탈 직접 렌더 (visual 프로젝타일 대체 — 성능 최적화)
+            if(WeaponSys._orbitals && WeaponSys._orbitals.length > 0) {
+                const icon = WeaponSys._orbitalEvo ? "👹" : "🖐️";
+                ctx.font = '40px Arial';
+                if(WeaponSys._orbitalEvo) { ctx.save(); ctx.shadowColor = '#f97316'; ctx.shadowBlur = 12; }
+                WeaponSys._orbitals.forEach(o => ctx.fillText(icon, o.x, o.y));
+                if(WeaponSys._orbitalEvo) ctx.restore();
+            }
             particles.forEach(p => p.draw(ctx));
 
             projectiles.forEach(p => { 
@@ -679,7 +673,7 @@
                     ctx.font = fontSize + ' Arial'; 
                     if(p.isEvo) {
                         ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 20;
-                        if(GAME.frame%3===0) spawnParticles(p.x, p.y, '#a855f7', 1, 0, 5);
+                        if(GAME.frame%10===0) spawnParticles(p.x, p.y, '#a855f7', 1, 0, 4);
                     }
                     ctx.fillText(p.icon, 0, 0); ctx.restore();
                 } else if(p.type === 'visual') {
