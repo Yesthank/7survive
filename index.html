@@ -339,9 +339,12 @@
                     if (Math.hypot(e.x-player.x, e.y-player.y) < range + e.radius) {
                         const dmg = getWeaponDamage(isEvo?'analysis':'jacket', lv, isEvo);
                         e.hp -= dmg; e.hitFlash = 5;
-                        const pushForce = isEvo ? 12 : 4;
-                        const a = Math.atan2(e.y-player.y, e.x-player.x);
-                        e.pushX = Math.cos(a) * pushForce; e.pushY = Math.sin(a) * pushForce;
+                        // 넉백: 확률적 적용 (60%) + 힘 감소, 보스는 넉백 없음
+                        if(!e.type.includes('boss') && Math.random() < 0.6) {
+                            const pushForce = isEvo ? 6 : 3;
+                            const a = Math.atan2(e.y-player.y, e.x-player.x);
+                            e.pushX = Math.cos(a) * pushForce; e.pushY = Math.sin(a) * pushForce;
+                        }
                         if(e.hp <= 0) killEnemy(e);
                         if(isEvo) auraHeal += 0.3;
                     }
