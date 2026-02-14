@@ -585,14 +585,14 @@
                         const r = p.radius || 60;
                         if (Math.hypot(e.x - p.x, e.y - p.y) < r) {
                             e.hp -= p.dmg; e.hitFlash = 5;
-                            if(p.dmg > 30) GAME.screenShake = 2;
+                            if(!p.isEvo && p.dmg > 30) GAME.screenShake = 2;
                             showFloatText(e.x, e.y, Math.floor(p.dmg));
                             if (e.hp <= 0) killEnemy(e);
                         }
                     });
                 }
                 if (p.life <= 0) { 
-                    if(p.icon === "🐷") spawnParticles(p.x, p.y, 'red', 30, 8, 10); 
+                    if(p.icon === "🐷") spawnParticles(p.x, p.y, '#f87171', 6, 4, 5); 
                     projectiles.splice(i, 1); 
                 }
             }
@@ -650,9 +650,19 @@
 
             projectiles.forEach(p => {
                 if (p.type === 'zone') {
-                    ctx.save(); ctx.globalAlpha = 0.4; ctx.fillStyle = 'red';
-                    const r = p.radius || 60; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.fill();
-                    ctx.globalAlpha = 1.0; ctx.font = '30px Arial'; ctx.fillText(p.icon, p.x, p.y); 
+                    ctx.save();
+                    const r = p.radius || 60;
+                    const fade = Math.min(1, p.life / 60);
+                    if(p.isEvo) {
+                        ctx.globalAlpha = 0.12 * fade; ctx.fillStyle = '#f87171';
+                        ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.fill();
+                        ctx.globalAlpha = 0.25 * fade; ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2; ctx.setLineDash([8,6]);
+                        ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+                    } else {
+                        ctx.globalAlpha = 0.2 * fade; ctx.fillStyle = '#fb923c';
+                        ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.fill();
+                    }
+                    ctx.globalAlpha = 0.8 * fade; ctx.font = '24px Arial'; ctx.fillText(p.icon, p.x, p.y);
                     ctx.restore();
                 }
             });
