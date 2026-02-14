@@ -244,7 +244,8 @@
         }
 
         const player = new Player();
-        let enemies = [], items = [], projectiles = [], damageTexts = [];
+        let enemies = [], items = [], projectiles = [], damageTexts = [], analysisTexts = [];
+        const ANALYSIS_QUOTES = ["음 난 알겠다", "분석완료", "근거가무엇인지?", "심리분석중...", "너 지금 긴장했지?", "패턴 파악 완료", "예측 가능하다", "다 보인다", "흥미로운 반응이야", "감정선 포착"];
         const keys = {}, joy = { active: false, dx: 0, dy: 0, originX: 0, originY: 0 };
 
         function getWeaponDamage(id, level, isEvo) {
@@ -346,6 +347,10 @@
                     }
                 });
                 if(isEvo && auraHeal > 0) player.hp = Math.min(player.maxHp, player.hp + Math.min(auraHeal, 3));
+                if(isEvo && GAME.frame % 90 === 0) {
+                    const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * (range * 0.6);
+                    analysisTexts.push({ text: ANALYSIS_QUOTES[Math.floor(Math.random()*ANALYSIS_QUOTES.length)], x: player.x + Math.cos(a)*d, y: player.y + Math.sin(a)*d, life: 80 });
+                }
             },
             fireOrbital(inv) {
                 const isEvo = !!inv.burning; const count = isEvo ? 6 : 2 + inv.hand;
@@ -610,17 +615,32 @@
             ctx.font = '24px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             items.forEach(it => { if(it.type === 'chest') { ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = 'gold'; ctx.font = '40px Arial'; ctx.fillText(it.icon, it.x, it.y); ctx.restore(); } else { ctx.fillText(it.icon, it.x, it.y); } });
 
-            if (player.auraRange && player.auraColor) { 
+            if (player.auraRange && player.auraColor) {
                 ctx.save();
-                if(player.auraColor.includes('216')) { 
-                    ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 3; 
+                if(player.auraColor.includes('168')) {
+                    ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 3;
                     ctx.beginPath(); ctx.arc(player.x, player.y, player.auraRange, 0, Math.PI*2); ctx.stroke();
                     ctx.globalAlpha = 0.2; ctx.fillStyle = '#a855f7'; ctx.fill();
-                } else { 
-                    ctx.strokeStyle = '#facc15'; ctx.lineWidth = 4; ctx.setLineDash([15, 10]); 
+                } else {
+                    ctx.strokeStyle = '#facc15'; ctx.lineWidth = 4; ctx.setLineDash([15, 10]);
                     ctx.beginPath(); ctx.arc(player.x, player.y, player.auraRange, 0, Math.PI*2); ctx.stroke();
                     ctx.clip(); ctx.beginPath(); ctx.strokeStyle = 'rgba(253, 224, 71, 0.2)'; ctx.lineWidth = 2; ctx.setLineDash([]);
                     for(let i=-player.auraRange; i<player.auraRange; i+=30) { ctx.moveTo(player.x + i, player.y - player.auraRange); ctx.lineTo(player.x + i - 30, player.y + player.auraRange); } ctx.stroke();
+                }
+                ctx.restore();
+            }
+            // 심리분석완료 문구 이펙트
+            if(analysisTexts.length > 0) {
+                ctx.save();
+                ctx.font = 'bold 16px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                for(let i = analysisTexts.length - 1; i >= 0; i--) {
+                    const t = analysisTexts[i];
+                    t.y -= 0.4; t.life--;
+                    const alpha = Math.min(1, t.life / 30) * 0.7;
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = '#e9d5ff'; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 3;
+                    ctx.strokeText(t.text, t.x, t.y); ctx.fillText(t.text, t.x, t.y);
+                    if(t.life <= 0) analysisTexts.splice(i, 1);
                 }
                 ctx.restore();
             }
@@ -753,7 +773,7 @@
             if(isNew) { 
                 player.reset(); 
                 GAME.frame=0; GAME.time=0; GAME.score=0; 
-                enemies=[]; items=[]; projectiles=[]; damageTexts=[]; seenEnemies.clear(); particles=[]; 
+                enemies=[]; items=[]; projectiles=[]; damageTexts=[]; analysisTexts=[]; seenEnemies.clear(); particles=[]; 
             } 
             resumeGame(); 
             updateUI(); 
