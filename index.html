@@ -792,23 +792,34 @@
             const hpPct = Math.max(0, player.hp / player.maxHp); ctx.fillStyle = '#333'; ctx.fillRect(player.x-20, player.y+35, 40, 6); ctx.fillStyle = '#ef4444'; ctx.fillRect(player.x-20, player.y+35, 40*hpPct, 6);
         }
 
-        function saveGame() { if(GAME.state!=='running') return; const data = { game: GAME, player: { hp:player.hp, maxHp:player.maxHp, exp:player.exp, level:player.level, nextExp:player.nextExp, inventory:player.inventory }, seenEnemies: Array.from(seenEnemies) }; localStorage.setItem('7ban_save_v16_2', JSON.stringify(data)); alert("저장 완료!"); }
+        function saveGame() {
+            if(GAME.state!=='running') return;
+            const data = {
+                game: { frame: GAME.frame, time: GAME.time, score: GAME.score, freezeTimer: GAME.freezeTimer },
+                player: { hp:player.hp, maxHp:player.maxHp, exp:player.exp, level:player.level, nextExp:player.nextExp, inventory:player.inventory },
+                seenEnemies: Array.from(seenEnemies),
+                bossSpawned: BOSS_SCHEDULE.map(b => b.spawned)
+            };
+            localStorage.setItem('7ban_save_v16_2', JSON.stringify(data)); alert("저장 완료!");
+        }
         
-        function loadGame() { 
-            const json = localStorage.getItem('7ban_save_v16_2'); 
-            if(!json) { alert("저장된 파일이 없습니다."); return; } 
-            try { 
-                const d = JSON.parse(json); 
-                GAME.frame=d.game.frame; GAME.time=d.game.time; GAME.score=d.game.score; 
-                player.hp=d.player.hp; player.maxHp=d.player.maxHp; player.exp=d.player.exp; 
-                player.level=d.player.level; player.nextExp=d.player.nextExp; player.inventory=d.player.inventory; 
-                if(d.seenEnemies) d.seenEnemies.forEach(e => seenEnemies.add(e)); 
-                if(!player.stats) player.stats = { cd: 1, area: 1, duration: 1, magnet: 1, might: 1, speed: 1, recovery: 0 };
+        function loadGame() {
+            const json = localStorage.getItem('7ban_save_v16_2');
+            if(!json) { alert("저장된 파일이 없습니다."); return; }
+            try {
+                const d = JSON.parse(json);
+                player.reset();
+                GAME.frame=d.game.frame; GAME.time=d.game.time; GAME.score=d.game.score;
+                GAME.freezeTimer=d.game.freezeTimer||0; GAME.screenShake=0;
+                player.hp=d.player.hp; player.maxHp=d.player.maxHp; player.exp=d.player.exp;
+                player.level=d.player.level; player.nextExp=d.player.nextExp; player.inventory=d.player.inventory;
+                if(d.seenEnemies) d.seenEnemies.forEach(e => seenEnemies.add(e));
+                if(d.bossSpawned) BOSS_SCHEDULE.forEach((b,i) => { if(d.bossSpawned[i] !== undefined) b.spawned = d.bossSpawned[i]; });
                 player.updateStats();
-                if(!player.auraColor) { player.auraRange = 0; player.auraColor = 'rgba(0,0,0,0)'; }
-                enemies=[]; items=[]; projectiles=[]; damageTexts=[]; 
-                resumeGame(); 
-            } catch(e) { console.error(e); alert("세이브 파일 오류!"); } 
+                player.auraRange = 0; player.auraColor = 'rgba(0,0,0,0)';
+                enemies=[]; items=[]; projectiles=[]; damageTexts=[]; analysisTexts=[]; particles=[];
+                startGame(false);
+            } catch(e) { console.error(e); alert("세이브 파일 오류!"); }
         }
 
         function startGame(isNew) { 
