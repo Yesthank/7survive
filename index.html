@@ -561,6 +561,7 @@
         window.addEventListener('keyup', e => keys[e.key] = false);
         const joyZone = document.getElementById('joystick-zone');
         const joyKnob = document.getElementById('joystick-knob');
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) joyZone.style.display = 'block';
         joyZone.addEventListener('touchstart', e => { e.preventDefault(); joy.active=true; joy.originX=e.changedTouches[0].clientX; joy.originY=e.changedTouches[0].clientY; joyKnob.style.transition='none'; }, {passive:false});
         joyZone.addEventListener('touchmove', e => { if(!joy.active)return; e.preventDefault(); const dx=e.changedTouches[0].clientX-joy.originX; const dy=e.changedTouches[0].clientY-joy.originY; const dist=Math.hypot(dx,dy), max=35; const norm=dist>max?max/dist:1; joyKnob.style.transform=`translate(calc(-50% + ${dx*norm}px), calc(-50% + ${dy*norm}px))`; joy.dx=(dx*norm)/max; joy.dy=(dy*norm)/max; }, {passive:false});
         joyZone.addEventListener('touchend', () => { joy.active=false; joy.dx=0; joy.dy=0; joyKnob.style.transform=`translate(-50%, -50%)`; });
