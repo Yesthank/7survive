@@ -125,6 +125,8 @@
         const ctx = canvas.getContext('2d');
         let WIDTH = window.innerWidth, HEIGHT = window.innerHeight;
         let loopId = null;
+        let lastLoopTime = 0;
+        const FRAME_TIME = 1000 / 60;
 
         window.addEventListener('resize', () => {
             WIDTH = window.innerWidth; HEIGHT = window.innerHeight;
@@ -567,8 +569,13 @@
         joyZone.addEventListener('touchend', () => { joy.active=false; joy.dx=0; joy.dy=0; joyKnob.style.transform=`translate(-50%, -50%)`; });
         function handleInput() { let dx=0, dy=0; if(keys['w']||keys['ArrowUp'])dy=-1; if(keys['s']||keys['ArrowDown'])dy=1; if(keys['a']||keys['ArrowLeft'])dx=-1; if(keys['d']||keys['ArrowRight'])dx=1; if(joy.active){dx=joy.dx;dy=joy.dy;} else if(dx||dy){const l=Math.hypot(dx,dy);dx/=l;dy/=l;} player.x+=dx*GAME_CONFIG.baseSpeed*player.stats.speed; player.y+=dy*GAME_CONFIG.baseSpeed*player.stats.speed; if(dx!==0)player.facing=dx>0?1:-1; }
         
-        function loop() {
+        function loop(timestamp) {
             if (GAME.state !== 'running') return;
+            loopId = requestAnimationFrame(loop);
+            if (!timestamp) timestamp = performance.now();
+            const delta = timestamp - lastLoopTime;
+            if (delta < FRAME_TIME) return;
+            lastLoopTime = timestamp - (delta % FRAME_TIME);
             GAME.frame++; if (GAME.freezeTimer > 0) GAME.freezeTimer--; if (GAME.screenShake > 0) GAME.screenShake--;
             if (GAME.frame % 60 === 0) { GAME.time++; if(player.stats.recovery > 0) player.hp = Math.min(player.maxHp, player.hp + player.stats.recovery); if (GAME.time >= GAME_CONFIG.endTime) { endGame(true); return; } }
             handleInput(); if (player.invincible > 0) player.invincible--;
@@ -621,15 +628,15 @@
                     projectiles.splice(i, 1); 
                 }
             }
-            render(); 
-            loopId = requestAnimationFrame(loop);
+            render();
         }
 
         function resumeGame() {
             if (GAME.state === 'running') return;
             GAME.state = 'running';
-            cancelAnimationFrame(loopId); 
-            loop();
+            cancelAnimationFrame(loopId);
+            lastLoopTime = 0;
+            loopId = requestAnimationFrame(loop);
         }
 
         function render() {
