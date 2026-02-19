@@ -103,6 +103,7 @@
     <div id="result-screen">
         <h1 id="result-title" style="font-size: 40px; color: white; margin-bottom: 10px;"></h1>
         <p id="result-desc" style="font-size: 24px; color: #fbbf24; text-align: center; font-weight:bold;"></p>
+        <button id="btn-continue" class="btn-restart" style="display:none; background:linear-gradient(135deg,#6366f1,#4f46e5); margin-top:10px;" onclick="continueEndless()">🎓 대학 편 계속하기</button>
         <button class="btn-restart" onclick="location.reload()">타이틀로 이동</button>
     </div>
 
@@ -140,15 +141,19 @@
 
         // --- 데이터 ---
         const GAME_CONFIG = { endTime: 10 * 60, baseHp: 160, baseSpeed: 3.4, maxEnemies: 250, maxProjectiles: 60, maxParticles: 80 };
-        const GAME = { state: 'title', frame: 0, time: 0, score: 0, freezeTimer: 0, screenShake: 0 };
-        const ENEMY_NAMES = { 'normal': '1학년 좀비', 'fast': '매점 라면', 'swarm': '폭주한 라면떼', 'tank': '급식실 방패병', 'mixed': '혼종 무리', 'boss': '체육 선생님', 'mixed_hard': '고3 수험생', 'swarm_hard': '야자 짼 놈들', 'boss_final': '김영기 (최종보스)', 'boss_minsang': '민상 (3분 보스)', 'boss_taeho': '태호 (6분 보스)', 'boss_hanki': '한기 (9분 보스)' };
+        const GAME = { state: 'title', frame: 0, time: 0, score: 0, freezeTimer: 0, screenShake: 0, endless: false };
+        const ENEMY_NAMES = { 'normal': '1학년 좀비', 'fast': '매점 라면', 'swarm': '폭주한 라면떼', 'tank': '급식실 방패병', 'mixed': '혼종 무리', 'boss': '체육 선생님', 'mixed_hard': '고3 수험생', 'swarm_hard': '야자 짼 놈들', 'boss_final': '김영기 (최종보스)', 'boss_minsang': '민상 (3분 보스)', 'boss_taeho': '태호 (6분 보스)', 'boss_hanki': '한기 (9분 보스)', 'uni_mixed': '대학 혼종', 'uni_swarm': '새내기 무리', 'boss_prof': '꼰대 교수 (12분 보스)', 'boss_senior': '술먹는 선배 (14분 보스)', 'boss_ex': '전여친 (16분 보스)', 'boss_exam': '기말고사의 신 (18분 보스)' };
         const seenEnemies = new Set();
 
         const BOSS_SCHEDULE = [
             { time: 3 * 60, type: 'boss_minsang', spawned: false },
             { time: 5 * 60, type: 'boss', spawned: false },
             { time: 6 * 60, type: 'boss_taeho', spawned: false },
-            { time: 9 * 60, type: 'boss_hanki', spawned: false }
+            { time: 9 * 60, type: 'boss_hanki', spawned: false },
+            { time: 12 * 60, type: 'boss_prof', spawned: false },
+            { time: 14 * 60, type: 'boss_senior', spawned: false },
+            { time: 16 * 60, type: 'boss_ex', spawned: false },
+            { time: 18 * 60, type: 'boss_exam', spawned: false }
         ];
 
         const WAVES = [
@@ -162,7 +167,12 @@
             { start: 300, end: 310, type: 'normal', interval: 40, amount: 1, minCount: 15 },
             { start: 310, end: 500, type: 'mixed_hard', interval: 15, amount: 2, minCount: 80 },
             { start: 500, end: 590, type: 'swarm_hard', interval: 8, amount: 1, minCount: 100 },
-            { start: 590, end: 600, type: 'boss_final', interval: 999, amount: 1, minCount: 10 }
+            { start: 590, end: 600, type: 'boss_final', interval: 999, amount: 1, minCount: 10 },
+            // === 대학교 편 (무한모드) ===
+            { start: 600, end: 660, type: 'normal', interval: 30, amount: 2, minCount: 25 },
+            { start: 660, end: 780, type: 'uni_mixed', interval: 12, amount: 2, minCount: 80 },
+            { start: 780, end: 960, type: 'uni_swarm', interval: 7, amount: 1, minCount: 90 },
+            { start: 960, end: 99999, type: 'uni_mixed', interval: 10, amount: 2, minCount: 100 }
         ];
 
         const DATABASE = {
@@ -241,6 +251,11 @@
                 else if (this.type === 'tank') { this.icon="🛡️"; this.speed=1.6; this.hp=90*timeMult; this.dmg=15+m; this.resist=0.2; }
                 else if (this.type === 'boss') { this.icon="🦍"; this.speed=3.0; this.hp=4000*(1+m*0.4); this.radius=40; this.dmg=35; this.resist=0.0; }
                 else if (this.type === 'boss_final') { this.icon="🧙"; this.speed=3.2; this.hp=45000; this.radius=50; this.dmg=65; this.resist=0.0; }
+                // 대학교 편 보스
+                else if (this.type === 'boss_prof') { this.icon="👨‍🏫"; this.hp=80000; this.speed=2.2; this.dmg=70; this.radius=45; this.resist=0.0; }
+                else if (this.type === 'boss_senior') { this.icon="🍺"; this.hp=100000; this.speed=3.0; this.dmg=90; this.radius=45; this.resist=0.0; }
+                else if (this.type === 'boss_ex') { this.icon="💔"; this.hp=130000; this.speed=3.3; this.dmg=110; this.radius=45; this.resist=0.0; }
+                else if (this.type === 'boss_exam') { this.icon="📝"; this.hp=200000; this.speed=3.5; this.dmg=130; this.radius=55; this.resist=0.0; }
                 else { this.icon="🧟"; this.hp=22*timeMult; this.speed=2.2+(m*0.08); }
                 this.maxHp = this.hp;
             }
@@ -271,6 +286,9 @@
             el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 3000);
         }
 
+        const ENDLESS_BOSSES = ['boss_prof', 'boss_senior', 'boss_ex', 'boss_exam'];
+        let lastEndlessBoss = 0;
+
         function spawnManager() {
             BOSS_SCHEDULE.forEach(b => {
                 if (GAME.time === b.time && !b.spawned) {
@@ -279,6 +297,13 @@
                     showWaveNotice(`☠️ ${ENEMY_NAMES[b.type]} 출현! ☠️`);
                 }
             });
+            // 18분 이후: 2분마다 랜덤 대학 보스 반복 등장
+            if (GAME.endless && GAME.time > 18 * 60 && GAME.time - lastEndlessBoss >= 120) {
+                lastEndlessBoss = GAME.time;
+                const btype = ENDLESS_BOSSES[Math.floor(Math.random() * ENDLESS_BOSSES.length)];
+                spawnOneEnemy({ type: btype });
+                showWaveNotice(`☠️ ${ENEMY_NAMES[btype]} 재출현! ☠️`);
+            }
 
             const currentWave = WAVES.find(w => GAME.time >= w.start && GAME.time < w.end); if (!currentWave) return;
             if (enemies.length < (currentWave.minCount || 20)) { if (GAME.frame % 3 === 0) spawnOneEnemy(currentWave); }
@@ -289,7 +314,7 @@
             const a = Math.random() * Math.PI * 2; const r = Math.max(WIDTH, HEIGHT) / 2 + 50; 
             const ex = player.x + Math.cos(a) * r; const ey = player.y + Math.sin(a) * r;
             let type = waveInfo.type;
-            if (type === 'mixed' || type === 'mixed_hard') { const r = Math.random(); if (r < 0.2) type = 'fast'; else if (r < 0.4) type = 'tank'; else type = 'normal'; } else if (type === 'swarm' || type === 'swarm_hard') { type = 'fast'; }
+            if (type === 'mixed' || type === 'mixed_hard') { const r = Math.random(); if (r < 0.2) type = 'fast'; else if (r < 0.4) type = 'tank'; else type = 'normal'; } else if (type === 'swarm' || type === 'swarm_hard') { type = 'fast'; } else if (type === 'uni_mixed') { const r = Math.random(); if (r < 0.3) type = 'fast'; else if (r < 0.5) type = 'tank'; else type = 'normal'; } else if (type === 'uni_swarm') { type = 'fast'; }
             enemies.push(new Enemy(type, ex, ey));
         }
 
@@ -394,8 +419,8 @@
             if (e.type.includes('boss')) {
                 drop = { type:'chest', icon:'🎁', val:999, x:e.x, y:e.y };
                 // 네임드 보스 추가 보상
-                if(e.type === 'boss_minsang' || e.type === 'boss_taeho' || e.type === 'boss_hanki') {
-                    const bonus = e.type === 'boss_hanki' ? 5 : e.type === 'boss_taeho' ? 4 : 3;
+                if(e.type !== 'boss' && e.type !== 'boss_final') {
+                    const bonus = (e.type === 'boss_exam') ? 8 : (e.type === 'boss_ex') ? 7 : (e.type === 'boss_senior') ? 6 : (e.type === 'boss_prof') ? 5 : (e.type === 'boss_hanki') ? 5 : (e.type === 'boss_taeho') ? 4 : 3;
                     for(let b=0; b<bonus; b++) {
                         const ox = e.x + (Math.random()-0.5)*80, oy = e.y + (Math.random()-0.5)*80;
                         items.push({ type:'exp', icon:'💠', val: Math.floor(80 + GAME.time/60 * 15), x:ox, y:oy });
@@ -512,10 +537,14 @@
         function updateUI() {
             document.getElementById('ui-level').innerText = player.level;
             document.getElementById('exp-fill').style.width = Math.min(100, (player.exp/player.nextExp)*100)+'%';
-            const prog = Math.floor((GAME.time / GAME_CONFIG.endTime) * 100);
             const m = Math.floor(GAME.time/60).toString().padStart(2,'0');
             const s = (GAME.time%60).toString().padStart(2,'0');
-            document.getElementById('ui-timer').innerText = `${m}:${s} (${prog}%)`;
+            if (GAME.endless) {
+                document.getElementById('ui-timer').innerText = `${m}:${s} 🏫무한`;
+            } else {
+                const prog = Math.floor((GAME.time / GAME_CONFIG.endTime) * 100);
+                document.getElementById('ui-timer').innerText = `${m}:${s} (${prog}%)`;
+            }
             
             const inv = document.getElementById('inventory'); inv.innerHTML='';
             const wpns = player.inventory.weapons, psvs = player.inventory.passives;
@@ -558,7 +587,7 @@
             if (delta < FRAME_TIME) return;
             lastLoopTime = timestamp - (delta % FRAME_TIME);
             GAME.frame++; if (GAME.freezeTimer > 0) GAME.freezeTimer--; if (GAME.screenShake > 0) GAME.screenShake--;
-            if (GAME.frame % 60 === 0) { GAME.time++; if(player.stats.recovery > 0) player.hp = Math.min(player.maxHp, player.hp + player.stats.recovery); if (GAME.time >= GAME_CONFIG.endTime) { endGame(true); return; } }
+            if (GAME.frame % 60 === 0) { GAME.time++; if(player.stats.recovery > 0) player.hp = Math.min(player.maxHp, player.hp + player.stats.recovery); if (!GAME.endless && GAME.time >= GAME_CONFIG.endTime) { endGame(true); return; } }
             handleInput(); if (player.invincible > 0) player.invincible--;
             spawnManager(); WeaponSys.update(); updateItems();
             enemies.forEach(e => e.update()); particles.forEach((p,i) => { p.update(); if(p.life<=0) particles.splice(i,1); });
@@ -776,7 +805,7 @@
         function saveGame() {
             if(GAME.state!=='running') return;
             const data = {
-                game: { frame: GAME.frame, time: GAME.time, score: GAME.score, freezeTimer: GAME.freezeTimer },
+                game: { frame: GAME.frame, time: GAME.time, score: GAME.score, freezeTimer: GAME.freezeTimer, endless: GAME.endless },
                 player: { hp:player.hp, maxHp:player.maxHp, exp:player.exp, level:player.level, nextExp:player.nextExp, inventory:player.inventory },
                 seenEnemies: Array.from(seenEnemies),
                 bossSpawned: BOSS_SCHEDULE.map(b => b.spawned)
@@ -791,7 +820,7 @@
                 const d = JSON.parse(json);
                 player.reset();
                 GAME.frame=d.game.frame; GAME.time=d.game.time; GAME.score=d.game.score;
-                GAME.freezeTimer=d.game.freezeTimer||0; GAME.screenShake=0;
+                GAME.freezeTimer=d.game.freezeTimer||0; GAME.screenShake=0; GAME.endless=d.game.endless||false; lastEndlessBoss=0;
                 player.hp=d.player.hp; player.maxHp=d.player.maxHp; player.exp=d.player.exp;
                 player.level=d.player.level; player.nextExp=d.player.nextExp; player.inventory=d.player.inventory;
                 if(d.seenEnemies) d.seenEnemies.forEach(e => seenEnemies.add(e));
@@ -809,13 +838,34 @@
             document.getElementById('exp-container').style.display = 'block'; 
             if(isNew) { 
                 player.reset(); 
-                GAME.frame=0; GAME.time=0; GAME.score=0; 
+                GAME.frame=0; GAME.time=0; GAME.score=0; GAME.endless=false; lastEndlessBoss=0;
                 enemies=[]; items=[]; projectiles=[]; damageTexts=[]; analysisTexts=[]; seenEnemies.clear(); particles=[]; BOSS_SCHEDULE.forEach(b => b.spawned = false); 
             } 
             resumeGame(); 
             updateUI(); 
         }
-        function endGame(isClear) { GAME.state = 'gameover'; document.getElementById('result-screen').style.display='flex'; if(isClear) { document.getElementById('result-title').innerText = "🎓 졸업 축하합니다!"; document.getElementById('result-title').style.color = "#fbbf24"; document.getElementById('result-desc').innerText = "이제 당신은 김영기에게 인정받았습니다."; } else { document.getElementById('result-title').innerText = "😵 사망"; document.getElementById('result-title').style.color = "#ef4444"; document.getElementById('result-desc').innerText = `생존 시간: ${Math.floor(GAME.time/60)}분 ${GAME.time%60}초`; } }
+        function endGame(isClear) {
+            GAME.state = 'gameover';
+            document.getElementById('result-screen').style.display='flex';
+            document.getElementById('btn-continue').style.display = (isClear && !GAME.endless) ? 'block' : 'none';
+            if(isClear) {
+                document.getElementById('result-title').innerText = "🎓 졸업 축하합니다!";
+                document.getElementById('result-title').style.color = "#fbbf24";
+                document.getElementById('result-desc').innerText = "김영기에게 인정받았습니다.\n하지만... 대학이 기다리고 있다.";
+            } else {
+                document.getElementById('result-title').innerText = GAME.endless ? "😵 자퇴" : "😵 사망";
+                document.getElementById('result-title').style.color = "#ef4444";
+                document.getElementById('result-desc').innerText = `생존 시간: ${Math.floor(GAME.time/60)}분 ${GAME.time%60}초 | 킬 수: ${GAME.score}`;
+            }
+        }
+        function continueEndless() {
+            document.getElementById('result-screen').style.display='none';
+            GAME.endless = true;
+            player.hp = player.maxHp;
+            enemies = [];
+            showWaveNotice("🏫 대학교 편 돌입! 🏫");
+            resumeGame();
+        }
     </script>
 </body>
 </html>
