@@ -84,7 +84,6 @@
             <div>🖐️+🚬 = <b>👹</b></div>
             <div>💩+👓 = <b>🤯</b></div>
             <div>🍕+🍔 = <b>🐷</b></div>
-            <div>🏀+👟 = <b>💀</b></div>
         </div>
         <div id="inventory"></div>
         <div id="joystick-zone"><div id="joystick-knob"></div></div>
@@ -172,12 +171,10 @@
                 hand: { name: "김한기의 손", icon: "🖐️", type: "weapon", desc: "주변 회전", evo: "burning", baseDmg: 12, perDmg: 3 },
                 jacket: { name: "낡은 야상", icon: "💩", type: "weapon", desc: "오라 데미지 + 슈퍼넉백", evo: "analysis", baseDmg: 6, perDmg: 2 },
                 pizza: { name: "피자탕", icon: "🍕", type: "weapon", desc: "초광역 폭격", evo: "pig", cd: 60, baseDmg: 22, perDmg: 4 },
-                soccer: { name: "개발의 농구공", icon: "🏀", type: "weapon", desc: "벽에 튕기는 공", evo: "dream", cd: 45, baseDmg: 25, perDmg: 5 },
                 bat: { name: "영기의 몽둥이", icon: "🚀", type: "evo", desc: "기관총 연사", baseDmg: 35, perDmg: 2 },
                 burning: { name: "버닝 한태민영", icon: "👹", type: "evo", desc: "불꽃 회전", baseDmg: 30, perDmg: 2 },
                 analysis: { name: "심리분석완료", icon: "🤯", type: "evo", desc: "광역 흡혈 + 슈퍼넉백", baseDmg: 25, perDmg: 2 },
-                pig: { name: "개돼지 폭격", icon: "🐷", type: "evo", desc: "유도 장판", baseDmg: 45, perDmg: 3 },
-                dream: { name: "이래도꿈이가", icon: "💀", type: "evo", desc: "악몽의 해골 난사", baseDmg: 50, perDmg: 3 }
+                pig: { name: "개돼지 폭격", icon: "🐷", type: "evo", desc: "유도 장판", baseDmg: 45, perDmg: 3 }
             },
             passives: {
                 book: { name: "수학 정답지", icon: "📘", type: "passive", desc: "쿨타임 감소", valDesc: "쿨타임 -8%", synergyTarget: "📏 영기의 분필" },
@@ -185,10 +182,10 @@
                 glasses: { name: "안경", icon: "👓", type: "passive", desc: "획득 범위 증가", valDesc: "자석 +25%", synergyTarget: "💩 야상" },
                 burger: { name: "옆반 햄버거", icon: "🍔", type: "passive", desc: "최대 체력 증가", valDesc: "체력 +30", synergyTarget: "🍕 피자탕" },
                 protein: { name: "3대 500", icon: "💪", type: "passive", desc: "공격력 증가", valDesc: "데미지 +8%" },
-                slippers: { name: "삼선 슬리퍼", icon: "👟", type: "passive", desc: "이동속도 증가", valDesc: "속도 +10%", synergyTarget: "🏀 개발의 농구공" },
+                slippers: { name: "삼선 슬리퍼", icon: "👟", type: "passive", desc: "이동속도 증가", valDesc: "속도 +10%" },
                 juice: { name: "피크닉 사과주스", icon: "🧃", type: "passive", desc: "체력 자연회복", valDesc: "회복 +0.7/초" }
             },
-            evolution: { cane: "book", hand: "smoke", jacket: "glasses", pizza: "burger", soccer: "slippers" }
+            evolution: { cane: "book", hand: "smoke", jacket: "glasses", pizza: "burger" }
         };
 
         let particles = [];
@@ -304,7 +301,6 @@
                 if (inv.jacket || inv.analysis) this.fireAura(inv);
                 if (inv.hand || inv.burning) this.fireOrbital(inv); 
                 if (inv.pizza || inv.pig) this.fireZone(inv);
-                if (inv.soccer || inv.dream) this.fireSoccer(inv); 
             },
             fireShooter(inv) {
                 const isEvo = !!inv.bat; const id = isEvo ? 'bat' : 'cane';
@@ -320,21 +316,6 @@
                         projectiles.push({ type: 'bullet', x: player.x, y: player.y, vx: Math.cos(a)*12, vy: Math.sin(a)*12, life: 60, dmg: dmg, icon: DATABASE.weapons[id].icon, pierce: pierce, hitIds: [], rotation: a, size: size, isEvo: isEvo });
                         this.cds[id] = Math.max(5, DATABASE.weapons[id].cd * player.stats.cd);
                     }
-                }
-            },
-            fireSoccer(inv) {
-                const isEvo = !!inv.dream; const id = isEvo ? 'dream' : 'soccer';
-                if (!this.cds[id]) this.cds[id] = 0;
-                if (this.cds[id]-- <= 0 && projectiles.length < GAME_CONFIG.maxProjectiles) {
-                    const count = isEvo ? 3 : 1;
-                    for(let i=0; i<count; i++) {
-                        const a = Math.random() * Math.PI * 2;
-                        const dmg = getWeaponDamage(id, inv[isEvo?'dream':'soccer'], isEvo);
-                        const speed = isEvo ? 14 : 12;
-                        const life = isEvo ? 180 : 120;
-                        projectiles.push({ type: 'ball', x: player.x, y: player.y, vx: Math.cos(a)*speed, vy: Math.sin(a)*speed, life: life, dmg: dmg, icon: DATABASE.weapons[id].icon, bounces: 5, isEvo: isEvo, hitIds: [] });
-                    }
-                    this.cds[id] = Math.max(isEvo ? 20 : 10, DATABASE.weapons[id].cd * player.stats.cd);
                 }
             },
             fireAura(inv) {
