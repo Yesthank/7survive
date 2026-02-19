@@ -140,7 +140,7 @@
         charImg.onload = () => { isCharLoaded = true; };
 
         // --- 데이터 ---
-        const GAME_CONFIG = { endTime: 10 * 60, baseHp: 160, baseSpeed: 3.4, maxEnemies: 400 };
+        const GAME_CONFIG = { endTime: 10 * 60, baseHp: 160, baseSpeed: 3.4, maxEnemies: 250, maxProjectiles: 60, maxParticles: 80 };
         const GAME = { state: 'title', frame: 0, time: 0, score: 0, freezeTimer: 0, screenShake: 0 };
         const ENEMY_NAMES = { 'normal': '1학년 좀비', 'fast': '매점 라면', 'swarm': '폭주한 라면떼', 'tank': '급식실 방패병', 'mixed': '혼종 무리', 'boss': '체육 선생님', 'mixed_hard': '고3 수험생', 'swarm_hard': '야자 짼 놈들', 'boss_final': '김영기 (최종보스)', 'boss_minsang': '민상 (3분 보스)', 'boss_taeho': '태호 (6분 보스)', 'boss_hanki': '한기 (9분 보스)' };
         const seenEnemies = new Set();
@@ -159,10 +159,10 @@
             { start: 90, end: 120, type: 'swarm', interval: 8, amount: 1, minCount: 60 },
             { start: 120, end: 180, type: 'tank', interval: 35, amount: 1, minCount: 50 },
             { start: 180, end: 240, type: 'mixed', interval: 25, amount: 2, minCount: 65 },
-            { start: 240, end: 300, type: 'mixed', interval: 20, amount: 2, minCount: 90 },
+            { start: 240, end: 300, type: 'mixed', interval: 20, amount: 2, minCount: 70 },
             { start: 300, end: 310, type: 'normal', interval: 40, amount: 1, minCount: 15 },
-            { start: 310, end: 500, type: 'mixed_hard', interval: 15, amount: 3, minCount: 120 },
-            { start: 500, end: 590, type: 'swarm_hard', interval: 6, amount: 1, minCount: 150 },
+            { start: 310, end: 500, type: 'mixed_hard', interval: 15, amount: 2, minCount: 80 },
+            { start: 500, end: 590, type: 'swarm_hard', interval: 8, amount: 1, minCount: 100 },
             { start: 590, end: 600, type: 'boss_final', interval: 999, amount: 1, minCount: 10 }
         ];
 
@@ -200,7 +200,7 @@
             update() { this.x+=this.vx; this.y+=this.vy; this.life--; this.size*=0.95; }
             draw(ctx) { ctx.globalAlpha=this.life/this.maxLife; ctx.fillStyle=this.color; if(this.type==='circle'){ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();}else{ctx.fillRect(this.x,this.y,this.size,this.size);} ctx.globalAlpha=1.0; }
         }
-        function spawnParticles(x, y, color, count, speed=2, size=5) { for(let i=0; i<count; i++) particles.push(new Particle(x, y, color, size, Math.random()*speed, 30)); }
+        function spawnParticles(x, y, color, count, speed=2, size=5) { for(let i=0; i<count && particles.length < GAME_CONFIG.maxParticles; i++) particles.push(new Particle(x, y, color, size, Math.random()*speed, 30)); }
 
         class Player {
             constructor() { this.reset(); }
@@ -312,7 +312,7 @@
                 if (this.cds[id]-- <= 0) {
                     let target = null, min = 600 * player.stats.area;
                     enemies.forEach(e => { const d = Math.hypot(e.x-player.x, e.y-player.y); if(d<min){min=d;target=e;} });
-                    if(target) {
+                    if(target && projectiles.length < GAME_CONFIG.maxProjectiles) {
                         const a = Math.atan2(target.y-player.y, target.x-player.x);
                         const dmg = getWeaponDamage(id, inv[id], isEvo);
                         const pierce = isEvo ? 999 : inv[id];
@@ -325,13 +325,13 @@
             fireSoccer(inv) {
                 const isEvo = !!inv.dream; const id = isEvo ? 'dream' : 'soccer';
                 if (!this.cds[id]) this.cds[id] = 0;
-                if (this.cds[id]-- <= 0) {
+                if (this.cds[id]-- <= 0 && projectiles.length < GAME_CONFIG.maxProjectiles) {
                     const count = isEvo ? 3 : 1;
                     for(let i=0; i<count; i++) {
                         const a = Math.random() * Math.PI * 2;
                         const dmg = getWeaponDamage(id, inv[isEvo?'dream':'soccer'], isEvo);
                         const speed = isEvo ? 14 : 12;
-                        const life = isEvo ? 300 : 200;
+                        const life = isEvo ? 180 : 120;
                         projectiles.push({ type: 'ball', x: player.x, y: player.y, vx: Math.cos(a)*speed, vy: Math.sin(a)*speed, life: life, dmg: dmg, icon: DATABASE.weapons[id].icon, bounces: 5, isEvo: isEvo, hitIds: [] });
                     }
                     this.cds[id] = Math.max(isEvo ? 20 : 10, DATABASE.weapons[id].cd * player.stats.cd);
@@ -395,7 +395,7 @@
             fireZone(inv) {
                 const isEvo = !!inv.pig; const id = isEvo?'pig':'pizza';
                 if(!this.cds[id]) this.cds[id] = 0;
-                if(this.cds[id]-- <= 0) {
+                if(this.cds[id]-- <= 0 && projectiles.length < GAME_CONFIG.maxProjectiles) {
                     const tx = player.x + (Math.random()-0.5) * WIDTH * 0.8; const ty = player.y + (Math.random()-0.5) * HEIGHT * 0.8;
                     const level = inv[id];
                     const dmg = getWeaponDamage(id, level, isEvo);
@@ -447,7 +447,7 @@
                         else if(it.type==='freeze') { GAME.freezeTimer = it.val; showFloatText(player.x, player.y, "⏱️ Freeze!"); } 
                         else if(it.type==='nuke') {
                             const flash = document.getElementById('flash-layer'); flash.style.opacity = 0.6; setTimeout(() => flash.style.opacity = 0, 500);
-                            GAME.screenShake = 20; spawnParticles(player.x, player.y, '#fde047', 50, 10, 10);
+                            GAME.screenShake = 20; spawnParticles(player.x, player.y, '#fde047', 15, 10, 10);
                             [...enemies].forEach(e => {
                                 if (e.type.includes('boss')) { e.hp -= e.maxHp * 0.3; e.hitFlash = 10; showFloatText(e.x, e.y, Math.floor(e.maxHp * 0.3), 30, "orange"); if (e.hp <= 0) killEnemy(e); }
                                 else { showFloatText(e.x, e.y, "☠️", 30, "red"); killEnemy(e); }
@@ -599,7 +599,7 @@
                         if (Math.hypot(e.x - p.x, e.y - p.y) < e.radius + 15) {
                             if(p.hitIds && p.hitIds.includes(j)) continue;
                             e.hp -= p.dmg; e.hitFlash = 5;
-                            spawnParticles(p.x, p.y, 'white', 2, 2, 3);
+                            spawnParticles(p.x, p.y, 'white', 1, 2, 3);
                             const a = Math.atan2(e.y - p.y, e.x - p.x); e.pushX = Math.cos(a) * 6; e.pushY = Math.sin(a) * 6;
                             showFloatText(e.x, e.y, Math.floor(p.dmg));
                             if (e.hp <= 0) killEnemy(e);
@@ -624,7 +624,7 @@
                     });
                 }
                 if (p.life <= 0) { 
-                    if(p.icon === "🐷") spawnParticles(p.x, p.y, '#f87171', 6, 4, 5); 
+                    if(p.icon === "🐷") spawnParticles(p.x, p.y, '#f87171', 2, 4, 5); 
                     projectiles.splice(i, 1); 
                 }
             }
