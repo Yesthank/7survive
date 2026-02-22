@@ -108,21 +108,22 @@ canvas { display: block; }
     text-shadow: 1px 1px 0 #000;
 }
 
-/* ===== 조이스틱 ===== */
+/* ===== 조이스틱 (터치 위치 동적 생성) ===== */
 #joystick-zone {
-    position: absolute; bottom: 40px; left: 40px;
+    position: absolute;
     width: 110px; height: 110px;
-    background: rgba(255, 255, 255, 0.08); border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    display: none; pointer-events: auto; touch-action: none;
+    background: rgba(255, 255, 255, 0.1); border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    display: none; pointer-events: none; touch-action: none;
+    z-index: 150;
 }
 #joystick-knob {
     position: absolute; top: 50%; left: 50%;
     width: 44px; height: 44px;
-    background: rgba(255, 255, 255, 0.4); border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5); border-radius: 50%;
     transform: translate(-50%, -50%); pointer-events: none;
+    box-shadow: 0 0 10px rgba(255,255,255,0.2);
 }
-@media (any-pointer: coarse) { #joystick-zone { display: block; } }
 
 /* ===== 레벨업 모달 ===== */
 #levelup-modal {
