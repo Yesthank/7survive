@@ -242,7 +242,7 @@
                 this.x = 0; this.y = 0;
                 const baseHp = Math.floor(GAME_CONFIG.baseHp * ch.hpMult);
                 this.hp = baseHp; this.maxHp = baseHp; this.baseMaxHp = baseHp;
-                this.exp = 0; this.level = 1; this.nextExp = 10;
+                this.exp = 0; this.level = 1; this.nextExp = 35;
                 this.invincible = 0;
                 const startWpn = {}; startWpn[ch.startWeapon] = 1;
                 this.inventory = { weapons: startWpn, passives: {} };
@@ -493,7 +493,7 @@
                     const bonus = (e.type === 'boss_exam') ? 8 : (e.type === 'boss_ex') ? 7 : (e.type === 'boss_senior') ? 6 : (e.type === 'boss_prof') ? 5 : (e.type === 'boss_hanki') ? 5 : (e.type === 'boss_taeho') ? 4 : 3;
                     for(let b=0; b<bonus; b++) {
                         const ox = e.x + (Math.random()-0.5)*80, oy = e.y + (Math.random()-0.5)*80;
-                        items.push({ type:'exp', icon:'💠', val: Math.floor(80 + GAME.time/60 * 15), x:ox, y:oy });
+                        items.push({ type:'exp', icon:'💠', val: Math.floor(35 + GAME.time/60 * 8), x:ox, y:oy });
                     }
                     items.push({ type:'heal', icon:'🍗', val:80, x: e.x + 30, y: e.y });
                 }
@@ -503,7 +503,7 @@
             else if (rand < 0.015) { drop = { type:'magnet', icon:'🧲', val:0, x:e.x, y:e.y }; }
             else if (rand < 0.04) { drop = { type:'heal', icon:'🍗', val:50, x:e.x, y:e.y }; }
             else if (rand < 0.05) { drop = { type:'score', icon:'💰', val:100, x:e.x, y:e.y }; }
-            else { const m = GAME.time/60; let xpVal = Math.floor(12 + m * 2); let xpIcon = "🔹"; if(e.type === 'tank') { xpVal = Math.floor(60 + m * 8); xpIcon = "💠"; } else if(e.type === 'fast' || e.type === 'swarm') { xpVal = Math.floor(8 + m * 1.5); } drop = { type:'exp', icon: xpIcon, val: xpVal, x:e.x, y:e.y }; }
+            else { const m = GAME.time/60; let xpVal = Math.floor(5 + m * 1.2); let xpIcon = "🔹"; if(e.type === 'tank') { xpVal = Math.floor(25 + m * 4); xpIcon = "💠"; } else if(e.type === 'fast' || e.type === 'swarm') { xpVal = Math.floor(3 + m * 0.8); } drop = { type:'exp', icon: xpIcon, val: xpVal, x:e.x, y:e.y }; }
             items.push(drop); document.getElementById('ui-kill').innerText = GAME.score;
         }
 
@@ -558,8 +558,8 @@
         function levelUp() {
             if(player.exp < player.nextExp) return;
             player.level++; player.exp -= player.nextExp;
-            // 새 XP 곡선: 낮은 기본 + 완만한 성장 (레벨 많이 찍도록)
-            player.nextExp = Math.floor(10 + player.level * 3 + Math.pow(player.level, 1.15) * 0.8);
+            // XP 곡선: 초반 안정적 + 후반 점진적 상승
+            player.nextExp = Math.floor(35 + player.level * 8 + Math.pow(player.level, 1.4) * 1.2);
             GAME.state = 'paused';
             const box = document.getElementById('cards-box'); box.innerHTML = '';
             const pool = [];
