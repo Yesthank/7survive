@@ -169,10 +169,16 @@
         const seenEnemies = new Set();
 
         const BOSS_SCHEDULE = [
-            { time: 3 * 60, type: 'boss_minsang', spawned: false },
-            { time: 5 * 60, type: 'boss', spawned: false },
-            { time: 6 * 60, type: 'boss_taeho', spawned: false },
+            { time: 1 * 60, type: 'boss_minsang', spawned: false },
+            { time: 2 * 60, type: 'boss', spawned: false },
+            { time: 3 * 60, type: 'boss_taeho', spawned: false },
+            { time: 4 * 60, type: 'boss', spawned: false },
+            { time: 5 * 60, type: 'boss_hanki', spawned: false },
+            { time: 6 * 60, type: 'boss', spawned: false },
+            { time: 7 * 60, type: 'boss_minsang', spawned: false },
+            { time: 8 * 60, type: 'boss_taeho', spawned: false },
             { time: 9 * 60, type: 'boss_hanki', spawned: false },
+            { time: 10 * 60, type: 'boss_final', spawned: false },
             { time: 12 * 60, type: 'boss_prof', spawned: false },
             { time: 14 * 60, type: 'boss_senior', spawned: false },
             { time: 16 * 60, type: 'boss_ex', spawned: false },
